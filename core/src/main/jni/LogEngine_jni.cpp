@@ -5,46 +5,53 @@
 #include <android/log.h>
 
 /**
- * COMPILER OPTIMIZATION MACROS
- * likely/unlikely provide hints to the CPU branch predictor to minimize
- * pipeline stalls for frequently executed code paths.
+ * LOG TAG for JNI layer diagnostics.
+ * Allows filtering JNI-specific lifecycle events in Android Studio Logcat.
+ */
+#define TAG "LogcatEngine-JNI"
+
+/**
+ * COMPILER BRANCH HINTS
+ * Assists the CPU branch predictor to prioritize the most frequent execution paths.
  */
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 
 /**
- * GLOBAL ENGINE INSTANCE
- * The LogEngine is managed as a static singleton. Its lifecycle persists
- * for the duration of the native library's load time.
+ * STATIC ENGINE INSTANCE
+ * Managed as a singleton. The engine's lifecycle is tied to the native library
+ * loading state within the JVM.
  */
 static LogEngine g_logEngine;
 
 /**
- * HELPER: Safe JNI String Conversion
- * Converts a Java jstring to a C++ std::string.
- * Includes NULL checks and ensures JNI memory is released to prevent local reference leaks.
+ * HELPER: Safe JNI String to Std::String Conversion
+ * @param env JNI interface pointer.
+ * @param jstr The Java string to convert.
+ * @return C++ string copy. Returns empty string on NULL input or allocation failure.
  */
 std::string jstringToStdString(JNIEnv *env, jstring jstr) {
     if (unlikely(!jstr)) return "";
 
-    // GetStringUTFChars allocates a new UTF-8 string copy in the JNI heap
+    // GetStringUTFChars creates a modified UTF-8 copy of the java string
     const char *chars = env->GetStringUTFChars(jstr, nullptr);
     if (unlikely(!chars)) {
-        // Return empty if allocation fails (usually due to OOM)
+        // Log error if JNI fails to allocate memory for the string chars
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "jstringToStdString: GetStringUTFChars failed (OOM?)");
         return "";
     }
 
     std::string result(chars);
 
-    // Crucial: Release the JNI reference immediately after copying to std::string
+    // Immediate release to prevent JNI local reference table overflow
     env->ReleaseStringUTFChars(jstr, chars);
     return result;
 }
 
 /**
  * JNI BRIDGE: configureAndStart
- * Initializes the engine with filter parameters and starts the capture thread.
- * @return File Descriptor (read-end) for Kotlin's FileChannel consumption.
+ * Configures the LogEngine with provided filters and returns a pipe File Descriptor.
+ * * @return jint: A valid File Descriptor (read-end) on success, or -1 on failure.
  */
 extern "C" JNIEXPORT jint JNICALL
 Java_com_core_logcat_capture_core_LogManager_configureAndStart(
@@ -57,22 +64,30 @@ Java_com_core_logcat_capture_core_LogManager_configureAndStart(
     config.level = jstringToStdString(env, level);
     config.customRegex = jstringToStdString(env, regex);
 
-    return g_logEngine.start(config);
+    jint fd = g_logEngine.start(config);
+
+    if (likely(fd > 0)) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Engine started. Native Pipe FD: %d", fd);
+    } else {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to start Engine. Check LogConfig parameters.");
+    }
+
+    return fd;
 }
 
 /**
  * JNI BRIDGE: stop
- * Signals the engine to terminate the worker thread and close all internal pipes.
+ * Triggers the shutdown sequence for the background thread and its child processes.
  */
 extern "C" JNIEXPORT void JNICALL
 Java_com_core_logcat_capture_core_LogManager_stop(JNIEnv *env, jobject thiz) {
+    __android_log_print(ANDROID_LOG_INFO, TAG, "Initiating Engine shutdown...");
     g_logEngine.stop();
 }
 
 /**
  * JNI BRIDGE: updateRegex
- * Optimized hot-swap for regex filters. Bypasses helper functions to reduce
- * overhead on high-frequency UI updates.
+ * Hot-swaps the current regex filter pattern without interrupting the capture stream.
  */
 extern "C" JNIEXPORT void JNICALL
 Java_com_core_logcat_capture_core_LogManager_updateRegex(JNIEnv *env, jobject thiz, jstring regex) {
@@ -85,13 +100,14 @@ Java_com_core_logcat_capture_core_LogManager_updateRegex(JNIEnv *env, jobject th
     if (likely(cRegex)) {
         g_logEngine.updateRegex(cRegex);
         env->ReleaseStringUTFChars(regex, cRegex);
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, TAG, "updateRegex: Failed to extract JNI string chars");
     }
 }
 
 /**
  * JNI BRIDGE: updateLiteral
- * Hot-swaps the search filter using a literal string. The engine internally
- * handles character escaping for regex safety.
+ * Hot-swaps the filter with a literal string. Characters are escaped internally for safety.
  */
 extern "C" JNIEXPORT void JNICALL
 Java_com_core_logcat_capture_core_LogManager_updateLiteral(JNIEnv *env, jobject thiz, jstring text) {
@@ -104,5 +120,7 @@ Java_com_core_logcat_capture_core_LogManager_updateLiteral(JNIEnv *env, jobject 
     if (likely(cText)) {
         g_logEngine.updateLiteral(cText);
         env->ReleaseStringUTFChars(text, cText);
+    } else {
+        __android_log_print(ANDROID_LOG_WARN, TAG, "updateLiteral: Failed to extract JNI string chars");
     }
 }
