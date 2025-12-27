@@ -1,28 +1,20 @@
--keep class com.core.logcat.capture.** { *; }
-
+# Preserve JNI methods and LogManager class for the LogcatEngine
 -keepclasseswithmembernames class * {
     native <methods>;
 }
 
--keepclassmembers class * {
-    public <fields>;
-    public <methods>;
+-keep class com.core.logcat.capture.core.LogManager {
+    public *;
 }
 
--keepclassmembers enum * {
-    public static **[] values();
-    public static ** valueOf(java.lang.String);
+-keep class com.core.logcat.capture.core.LoggerServiceConnection {
+    public *;
 }
 
--keepclassmembers class * {
-    public static final java.lang.String LOG_TAG;
-}
-
--keepattributes *Annotation*
-
-# Preserve AIDL generated classes
+# Preserve AIDL generated interfaces if they are in this package
 -keep class com.core.logcat.capture.ILogControl { *; }
 -keep class com.core.logcat.capture.ILogControl$Stub { *; }
 
-# Keep the LogManager singleton
--keep class com.core.logcat.capture.core.LogManager { *; }
+# Optimization: Allow ProGuard to remove unused C++ helper calls but keep JNI Bridge
+-optimizationpasses 5
+-allowaccessmodification
