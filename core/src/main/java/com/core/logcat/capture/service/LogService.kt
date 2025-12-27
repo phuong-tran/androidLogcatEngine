@@ -12,7 +12,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-
 /**
  * LogcatService: A background service responsible for hosting the LogManager engine.
  * By running in a Service, log collection remains stable across configuration changes (like rotations).
