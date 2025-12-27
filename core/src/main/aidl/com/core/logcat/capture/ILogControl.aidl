@@ -1,5 +1,4 @@
 package com.core.logcat.capture;
-import android.os.ParcelFileDescriptor;
 
 interface ILogControl {
     void updateLiteral(String text);
