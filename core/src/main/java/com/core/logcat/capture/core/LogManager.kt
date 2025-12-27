@@ -1,6 +1,7 @@
 package com.core.logcat.capture.core
 
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -17,6 +18,8 @@ import java.nio.charset.StandardCharsets
  * Handles thread-safe lifecycle management, backpressure control, and high-performance I/O.
  */
 object LogManager {
+    private const val TAG = "LogManager"
+
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var captureJob: Job? = null
     private val globalLock = Mutex()
@@ -95,22 +98,28 @@ object LogManager {
      * Reads raw bytes from the Native pipe and decodes them into UTF-8 lines.
      */
     private fun CoroutineScope.launchCaptureJob(fd: Int): Job = launch(Dispatchers.IO) {
-        /**
-         * NIO OPTIMIZATION
-         * Direct ByteBuffer uses memory outside the Java Heap to minimize GC pressure.
-         * 256KB size matches the Native-side accumulator for peak throughput.
-         */
         val byteBuffer = ByteBuffer.allocateDirect(256 * 1024)
         val charBuffer = CharBuffer.allocate(256 * 1024)
         val decoder = StandardCharsets.UTF_8.newDecoder()
         val lineBuilder = StringBuilder(4096)
 
+        fun drainCharBuffer() {
+            charBuffer.flip()
+            while (charBuffer.hasRemaining()) {
+                val c = charBuffer.get()
+                if (c == '\n') {
+                    if (lineBuilder.isNotEmpty()) {
+                        logChannel.trySend(lineBuilder.toString())
+                        lineBuilder.setLength(0)
+                    }
+                } else {
+                    lineBuilder.append(c)
+                }
+            }
+            charBuffer.clear()
+        }
+
         try {
-            /**
-             * [fdsan Safety]
-             * ParcelFileDescriptor.adoptFd(fd) transfers ownership of the FD to Java.
-             * The 'use' block ensures the FD is properly closed, signaling the Native worker.
-             */
             ParcelFileDescriptor.adoptFd(fd).use { pfd ->
                 val channel = FileInputStream(pfd.fileDescriptor).channel
                 while (isActive && channel.isOpen) {
@@ -121,32 +130,29 @@ object LogManager {
                     byteBuffer.flip()
                     charBuffer.clear()
 
-                    /**
-                     * UTF-8 BOUNDARY SAFETY
-                     * decodes bytes to chars. Partial multi-byte characters are
-                     * handled correctly by the decoder state.
-                     */
+                    // Decode chunk -> chars
                     decoder.decode(byteBuffer, charBuffer, false)
-                    charBuffer.flip()
+                    drainCharBuffer()
 
-                    while (charBuffer.hasRemaining()) {
-                        val c = charBuffer.get()
-                        if (c == '\n') {
-                            if (lineBuilder.isNotEmpty()) {
-                                // Non-blocking send to the Channel
-                                logChannel.trySend(lineBuilder.toString())
-                                lineBuilder.setLength(0)
-                            }
-                        } else {
-                            lineBuilder.append(c)
-                        }
-                    }
                     // Shifts unread bytes to the beginning for the next read cycle
                     byteBuffer.compact()
                 }
+
+                // Flush decoder & gửi nốt phần còn lại (nếu có)
+                byteBuffer.flip()
+                decoder.decode(byteBuffer, charBuffer, true)
+                drainCharBuffer()
+
+                decoder.flush(charBuffer)
+                drainCharBuffer()
+
+                if (lineBuilder.isNotEmpty()) {
+                    logChannel.trySend(lineBuilder.toString())
+                    lineBuilder.setLength(0)
+                }
             }
         } catch (e: Exception) {
-            // Catches Pipe EOF or Coroutine Interruption
+            Log.e(TAG, "Error in log capture job", e)
         } finally {
             withContext(NonCancellable) {
                 stop() // Final fallback cleanup
