@@ -20,11 +20,6 @@
 
 -keepattributes *Annotation*
 
-# Preserve JNI methods
--keepclasseswithmembernames class * {
-    native <methods>;
-}
-
 # Preserve AIDL generated classes
 -keep class com.core.logcat.capture.ILogControl { *; }
 -keep class com.core.logcat.capture.ILogControl$Stub { *; }
