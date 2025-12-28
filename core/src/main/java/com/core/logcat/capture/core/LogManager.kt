@@ -138,7 +138,7 @@ object LogManager {
                     byteBuffer.compact()
                 }
 
-                // Flush decoder & gửi nốt phần còn lại (nếu có)
+                // Flush the decoder state and dispatch the final log line if it lacks a trailing newline
                 byteBuffer.flip()
                 decoder.decode(byteBuffer, charBuffer, true)
                 drainCharBuffer()
