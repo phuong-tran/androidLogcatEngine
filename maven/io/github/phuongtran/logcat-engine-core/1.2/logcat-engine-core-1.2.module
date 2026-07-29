@@ -1,0 +1,110 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.phuongtran",
+    "module": "logcat-engine-core",
+    "version": "1.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14.5"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-android",
+          "version": {
+            "requires": "1.10.2"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.3.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "logcat-engine-core-1.2.aar",
+          "url": "logcat-engine-core-1.2.aar",
+          "size": 2098545,
+          "sha512": "7407421179a1f998ab433e4db89c5a365d8214734bd278b762fdba7eb37c63163605435f91840a98dfbcf0be2796c8cd05e955f80ae97b584a64a20571d9c00f",
+          "sha256": "f2c3a46b6dd3ff544fe0c02e0ff86780d9eca993a43799fe3b653d3a41a9ee4d",
+          "sha1": "9dbffa37180628c4a232be1517c4a355b92c357d",
+          "md5": "4fe14a292314d989db4e15703a80ea2c"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-android",
+          "version": {
+            "requires": "1.10.2"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.3.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "logcat-engine-core-1.2.aar",
+          "url": "logcat-engine-core-1.2.aar",
+          "size": 2098545,
+          "sha512": "7407421179a1f998ab433e4db89c5a365d8214734bd278b762fdba7eb37c63163605435f91840a98dfbcf0be2796c8cd05e955f80ae97b584a64a20571d9c00f",
+          "sha256": "f2c3a46b6dd3ff544fe0c02e0ff86780d9eca993a43799fe3b653d3a41a9ee4d",
+          "sha1": "9dbffa37180628c4a232be1517c4a355b92c357d",
+          "md5": "4fe14a292314d989db4e15703a80ea2c"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "logcat-engine-core-1.2-sources.jar",
+          "url": "logcat-engine-core-1.2-sources.jar",
+          "size": 17863,
+          "sha512": "34df509bb3e763213b4b9da2d88cf39605ff48b778b084af8a3bdd83f2b6aedcd99491d6fb7479271a8cfb1bdacdc2ebc28ee587516c33b606351f80bf36bd3d",
+          "sha256": "6c8ca3a825d1ff6647760f031a872ad543c1a9e96f4f45d654a049b830c174a5",
+          "sha1": "7c37eaec14b80d168993d1b0675ddd4ec70b3f42",
+          "md5": "8135d428e529c0756bc4f0922964eb72"
+        }
+      ]
+    }
+  ]
+}

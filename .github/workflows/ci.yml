@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android Library
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Install Android native toolchain
+        run: |
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "cmake;3.22.1" \
+            "ndk;29.0.13846066"
+
+      - name: Core unit tests
+        run: ./gradlew :core:testDebugUnitTest --console=plain
+
+      - name: Android lint
+        run: ./gradlew :core:lintDebug :app:lintDebug --console=plain
+
+      - name: Assemble artifacts
+        run: ./gradlew :core:assembleRelease :app:assembleDebug --console=plain
+
+      - name: Verify static Maven publication
+        run: ./gradlew :core:publishReleasePublicationToLocalStaticMavenRepository --console=plain

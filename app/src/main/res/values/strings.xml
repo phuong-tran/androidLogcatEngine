@@ -1,0 +1,50 @@
+<resources>
+    <string name="app_name">LogcatEngine</string>
+    <string name="status_pid">pid %1$d</string>
+    <plurals name="status_line_count">
+        <item quantity="one">%1$d line</item>
+        <item quantity="other">%1$d lines</item>
+    </plurals>
+    <string name="state_running">Running</string>
+    <string name="state_starting">Starting</string>
+    <string name="state_error">Error</string>
+    <string name="state_idle">Idle</string>
+    <string name="state_stopped">Stopped</string>
+    <string name="control_section_title">Control</string>
+    <string name="action_start">Start</string>
+    <string name="action_restart">Restart</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_show">Show</string>
+    <string name="action_hide">Hide</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_share">Share</string>
+    <string name="action_clear_logcat">Clear logcat</string>
+    <string name="action_top">Top</string>
+    <string name="toggle_simulate_w_logs">Simulate W logs</string>
+    <string name="filter_none">None</string>
+    <string name="filter_text">Text</string>
+    <string name="filter_regex">Regex</string>
+    <string name="filter_field_label">Filter</string>
+    <string name="toast_service_not_running">Service is not running</string>
+    <plurals name="status_lines_copied">
+        <item quantity="one">%1$d line copied</item>
+        <item quantity="other">%1$d lines copied</item>
+    </plurals>
+    <string name="status_share_sheet_opened">Share sheet opened</string>
+    <string name="status_simulated_logs_resumed">Simulated logs resumed</string>
+    <string name="status_simulated_logs_paused">Simulated logs paused</string>
+    <string name="dialog_clear_logcat_title">Clear logcat buffer?</string>
+    <string name="dialog_clear_logcat_body">This runs logcat -c and clears device logcat buffers available to this app, not only the visible history. Some devices may deny it.</string>
+    <string name="dialog_clear_logcat_confirm">OK</string>
+    <string name="dialog_clear_logcat_confirm_busy">Clearing</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="clipboard_log_history_label">LogcatEngine history</string>
+    <string name="share_log_history_title">Share log history</string>
+    <string name="status_logcat_buffer_cleared">Logcat buffer cleared</string>
+    <string name="status_logcat_buffer_clear_failed_with_output">%1$s: %2$s</string>
+    <string name="log_tag_simulator">SIMULATOR</string>
+    <string name="sample_log_simulator_tick">LogcatEngine sample tick=%1$d</string>
+    <string name="sample_log_simulator_warning">Sample warning tick=%1$d</string>
+    <string name="log_level_unknown">-</string>
+</resources>
