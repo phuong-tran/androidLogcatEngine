@@ -51,7 +51,7 @@ Publish the local static Maven artifact:
 Current local coordinate:
 
 ```kotlin
-implementation("io.github.phuongtran:logcat-engine-core:1.2")
+implementation("io.github.phuongtran:logcat-engine-core:1.3")
 ```
 
 ## Native Syntax Check

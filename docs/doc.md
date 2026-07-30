@@ -94,8 +94,8 @@ engine that reports an error state instead of crashing the host app.
 `LogcatConfig` describes the capture request:
 
 - optional process id
-- tag filters passed to `logcat`
-- minimum log level
+- complete tag filter spec passed to `logcat`
+- minimum log level, used only when the tag filter spec is blank
 - line filter mode
 - bounded history size
 

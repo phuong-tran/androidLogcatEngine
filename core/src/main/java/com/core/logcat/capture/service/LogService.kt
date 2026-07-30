@@ -14,6 +14,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Optional bound service host for apps that want capture to outlive an Activity.
@@ -21,51 +23,70 @@ import kotlinx.coroutines.launch
 class LogcatService : Service() {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val commandLock = Mutex()
+    private var activeTags: String = ""
+
+    private fun regexFilter(regex: String?): LogFilter =
+        regex.orEmpty()
+            .takeIf { it.isNotBlank() }
+            ?.let(LogFilter::Regex)
+            ?: LogFilter.None
+
+    private suspend fun restartLogging(tags: String, filter: LogFilter) {
+        LogManager.startAndJoin(
+            LogcatConfig(
+                pid = Process.myPid(),
+                tags = tags,
+                minLevel = LogLevel.Verbose,
+                filter = filter,
+            )
+        )
+        activeTags = tags
+    }
 
     private val binder = object : ILogControl.Stub() {
 
         override fun startLogging(tags: String?, regex: String?) {
             serviceScope.launch {
-                val myPid = Process.myPid()
-                LogManager.startAndJoin(
-                    LogcatConfig(
-                        pid = myPid,
-                        tags = tags.orEmpty(),
-                        minLevel = LogLevel.Verbose,
-                        filter = regex.orEmpty()
-                            .takeIf { it.isNotBlank() }
-                            ?.let(LogFilter::Regex)
-                            ?: LogFilter.None,
-                    )
-                )
+                commandLock.withLock {
+                    restartLogging(tags.orEmpty(), regexFilter(regex))
+                }
             }
         }
 
         override fun updateFilters(tags: String?, regex: String?) {
             serviceScope.launch {
-                LogManager.updateFilter(
-                    regex.orEmpty()
-                        .takeIf { it.isNotBlank() }
-                        ?.let(LogFilter::Regex)
-                        ?: LogFilter.None
-                )
+                commandLock.withLock {
+                    val nextTags = tags.orEmpty()
+                    val nextFilter = regexFilter(regex)
+                    if (nextTags == activeTags) {
+                        LogManager.updateFilter(nextFilter)
+                    } else {
+                        restartLogging(nextTags, nextFilter)
+                    }
+                }
             }
         }
 
         override fun updateLiteral(text: String?) {
             serviceScope.launch {
-                LogManager.updateFilter(
-                    text.orEmpty()
-                        .takeIf { it.isNotBlank() }
-                        ?.let(LogFilter::Literal)
-                        ?: LogFilter.None
-                )
+                commandLock.withLock {
+                    LogManager.updateFilter(
+                        text.orEmpty()
+                            .takeIf { it.isNotBlank() }
+                            ?.let(LogFilter::Literal)
+                            ?: LogFilter.None
+                    )
+                }
             }
         }
 
         override fun stopLogging() {
             serviceScope.launch {
-                LogManager.stopNativeAndJoin()
+                commandLock.withLock {
+                    LogManager.stopNativeAndJoin()
+                    activeTags = ""
+                }
             }
         }
     }

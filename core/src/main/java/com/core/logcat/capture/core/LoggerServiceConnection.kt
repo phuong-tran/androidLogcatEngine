@@ -44,7 +44,12 @@ object LoggerServiceConnection : ServiceConnection {
         }
     }
 
-    /** Requests a regex filter update in the service. */
+    /**
+     * Requests filter updates in the service.
+     *
+     * Regex changes are hot-swapped when [tags] is unchanged. Tag changes restart
+     * capture because logcat tag filters are command-line arguments.
+     */
     fun updateFilters(tags: String, regex: String): Boolean {
         if (!_isConnected.value) return false
         connectionScope.launch {

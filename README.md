@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/phuong-tran/androidLogcatEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/phuong-tran/androidLogcatEngine/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2-blue.svg)](#maven-publishing)
+[![Version](https://img.shields.io/badge/version-1.3-blue.svg)](#maven-publishing)
 
 LogcatEngine is an Android library designed to efficiently capture and display your application's logcat output. The library utilizes **C++17** at the native layer to monitor logcat via **Linux Epoll** and delivers it to the Kotlin layer via a **Unix Pipe**, keeping log capture work off the UI thread.
 
@@ -15,7 +15,7 @@ LogcatEngine is an Android library designed to efficiently capture and display y
 - **Watchdog & Resilience**: Automatically monitors and restarts the logcat process if it's terminated by the system.
 - **Backpressure Handling**: Uses a bounded `SharedFlow` buffer with a `DROP_OLDEST` policy to prevent memory overflow during log storms.
 - **Memory Optimized**: Employs NIO's `DirectByteBuffer` and Native Buffers to bypass Java GC pressure.
-- **Hot-Swappable Filters**: Update regex or plain text filters in real-time without restarting the capture thread.
+- **Hot-Swappable Line Filters**: Update regex or plain text filters in real-time without restarting the capture thread.
 - **Fail-Open Factory**: Provides a no-op engine when the native library is unavailable.
 
 ## Runtime Contract
@@ -52,6 +52,8 @@ should not depend on every logcat line being delivered.
 
 ### 1. Initialize the Engine
 In your `Activity` or `Service`, initialize the engine with a typed config. To capture logs only from your app, pass the current PID.
+`tags` accepts logcat's complete tag filter syntax, such as `MyTag:V *:S`;
+when `tags` is set, it controls priorities and `minLevel` is not appended.
 
 ```kotlin
 class MainActivity : ComponentActivity() {
@@ -132,7 +134,7 @@ The `:core` module is configured as a publishable Android AAR:
 The artifact coordinates are currently:
 
 ```kotlin
-implementation("io.github.phuongtran:logcat-engine-core:1.2")
+implementation("io.github.phuongtran:logcat-engine-core:1.3")
 ```
 
 This publishing setup is intentionally local/static for now. Release signing,
