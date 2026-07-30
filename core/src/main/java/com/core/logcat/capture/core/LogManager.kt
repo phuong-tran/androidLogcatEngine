@@ -36,6 +36,8 @@ object LogManager {
     private var lifecycleTail: Job = SupervisorJob().also { it.complete() }
     private val historyLock = Any()
     private val history = ArrayDeque<LogLine>()
+    private var nextSessionGeneration = 0L
+    private var activeSessionGeneration = NO_ACTIVE_SESSION
 
     @Volatile
     private var historyLimit = DEFAULT_HISTORY_LIMIT
@@ -101,23 +103,25 @@ object LogManager {
      * startup completion before continuing.
      */
     fun start(config: LogcatConfig = LogcatConfig.currentProcess()): LogcatSession {
-        val session = newSession()
+        val generation = nextSessionGeneration()
+        val session = newSession(generation)
         enqueueLifecycle {
-            startNativeAndJoin(config)
+            startNativeAndJoin(config, generation)
         }
         return session
     }
 
     /** Starts capture and waits until native startup has completed or failed. */
     suspend fun startAndJoin(config: LogcatConfig = LogcatConfig.currentProcess()): LogcatSession {
-        val session = newSession()
+        val generation = nextSessionGeneration()
+        val session = newSession(generation)
         enqueueLifecycle {
-            startNativeAndJoin(config)
+            startNativeAndJoin(config, generation)
         }.join()
         return session
     }
 
-    private suspend fun startNativeAndJoin(config: LogcatConfig) {
+    private suspend fun startNativeAndJoin(config: LogcatConfig, generation: Long) {
         if (!isNativeAvailable) {
             _state.value = LogcatState.Error("Native logcat library is unavailable")
             return
@@ -136,8 +140,10 @@ object LogManager {
             )
             if (fd >= 0) {
                 captureJob = scope.launchCaptureJob(fd)
+                activeSessionGeneration = generation
                 _state.value = LogcatState.Running(config)
             } else {
+                activeSessionGeneration = NO_ACTIVE_SESSION
                 _state.value = LogcatState.Error("Native logcat capture failed to start")
             }
         }
@@ -156,8 +162,17 @@ object LogManager {
         job?.let {
             if (it.isActive) it.cancelAndJoin()
         }
+        activeSessionGeneration = NO_ACTIVE_SESSION
         if (publishStopped) {
             _state.value = LogcatState.Stopped
+        }
+    }
+
+    private suspend fun stopIfCurrentGeneration(generation: Long) {
+        globalLock.withLock {
+            if (activeSessionGeneration == generation) {
+                stopLocked()
+            }
         }
     }
 
@@ -277,11 +292,30 @@ object LogManager {
         }
     }
 
-    private fun newSession(): LogcatSession = LogcatSession(
+    private fun nextSessionGeneration(): Long = synchronized(lifecycleQueueLock) {
+        nextSessionGeneration += 1
+        nextSessionGeneration
+    }
+
+    private fun newSession(generation: Long): LogcatSession = LogcatSession(
         rawLogs = logFlow,
         logs = structuredLogFlow,
         state = state,
+        stopAction = { stopSession(generation) },
+        stopAndJoinAction = { stopSessionAndJoin(generation) },
     )
+
+    private fun stopSession(generation: Long) {
+        enqueueLifecycle {
+            stopIfCurrentGeneration(generation)
+        }
+    }
+
+    private suspend fun stopSessionAndJoin(generation: Long) {
+        enqueueLifecycle {
+            stopIfCurrentGeneration(generation)
+        }.join()
+    }
 
     private fun enqueueLifecycle(block: suspend () -> Unit): Job {
         return synchronized(lifecycleQueueLock) {
@@ -422,6 +456,7 @@ object LogManager {
     private const val DEFAULT_HISTORY_LIMIT = 1_000
     private const val LOGCAT_CLEAR_TIMEOUT_MS = 2_000L
     private const val LOGCAT_CLEAR_POLL_MS = 25L
+    private const val NO_ACTIVE_SESSION = 0L
 
     private external fun configureAndStart(
         p: String,

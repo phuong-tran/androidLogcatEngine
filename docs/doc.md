@@ -113,6 +113,10 @@ engine that reports an error state instead of crashing the host app.
 - `exportHistory()`: text or JSON Lines export
 - `stop()` / `stopAndJoin()`: cleanup
 
+The native engine remains process-wide, but session shutdown is
+generation-checked so an older handle cannot stop a newer capture that replaced
+it.
+
 ### LogLine
 
 `LogLine` preserves the raw line and includes parsed fields when the logcat

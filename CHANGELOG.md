@@ -2,6 +2,10 @@
 
 All notable project changes are documented here.
 
+## Unreleased
+
+- Hardened `LogcatSession.stop()` and `stopAndJoin()` so stale session handles cannot stop a newer process-wide capture.
+
 ## 1.3 - 2026-07-30
 
 - Fixed service-hosted `updateFilters(tags, regex)` so tag changes restart capture instead of being silently ignored.

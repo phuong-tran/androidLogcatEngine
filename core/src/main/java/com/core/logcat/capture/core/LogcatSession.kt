@@ -9,8 +9,9 @@ import java.io.File
  * Session facade for the current process-wide capture.
  *
  * A session does not own an independent native process; it delegates to the
- * singleton engine. It exists to give UI/sample code a compact handle for
- * streams, history, filters, export, and shutdown.
+ * singleton engine. Stop calls are generation-checked, so an older session
+ * cannot stop a newer capture that replaced it. It exists to give UI/sample
+ * code a compact handle for streams, history, filters, export, and shutdown.
  */
 class LogcatSession internal constructor(
     /** Raw lines emitted after native filtering. */
@@ -56,12 +57,12 @@ class LogcatSession internal constructor(
         updateFilterAction(filter)
     }
 
-    /** Queues asynchronous shutdown. */
+    /** Queues asynchronous shutdown if this session is still the active capture. */
     fun stop() {
         stopAction()
     }
 
-    /** Stops capture and suspends until resources are released. */
+    /** Stops capture if this session is still active and suspends until handled. */
     suspend fun stopAndJoin() {
         stopAndJoinAction()
     }
