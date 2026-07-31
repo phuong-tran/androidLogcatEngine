@@ -2,9 +2,10 @@
 
 All notable project changes are documented here.
 
-## Unreleased
+## 1.4 - 2026-07-31
 
 - Hardened `LogcatSession.stop()` and `stopAndJoin()` so stale session handles cannot stop a newer process-wide capture.
+- Published the static Maven artifact as `io.github.phuongtran:logcat-engine-core:1.4`.
 
 ## 1.3 - 2026-07-30
 

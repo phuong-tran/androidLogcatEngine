@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/phuong-tran/androidLogcatEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/phuong-tran/androidLogcatEngine/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3-blue.svg)](#maven-publishing)
+[![Version](https://img.shields.io/badge/version-1.4-blue.svg)](#maven-publishing)
 
 LogcatEngine is an Android library designed to efficiently capture and display your application's logcat output. The library utilizes **C++17** at the native layer to monitor logcat via **Linux Epoll** and delivers it to the Kotlin layer via a **Unix Pipe**, keeping log capture work off the UI thread.
 
@@ -134,7 +134,7 @@ The `:core` module is configured as a publishable Android AAR:
 The artifact coordinates are currently:
 
 ```kotlin
-implementation("io.github.phuongtran:logcat-engine-core:1.3")
+implementation("io.github.phuongtran:logcat-engine-core:1.4")
 ```
 
 This publishing setup is intentionally local/static for now. Release signing,
